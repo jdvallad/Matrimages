@@ -186,6 +186,19 @@ public class Matrix {
         return null;
     }
 
+    public Matrix get(int startRow, int startCol, int endRow, int endCol) throws Exception{
+      if(startRow < 0 || startCol < 0 || endRow > this.rows || endCol > this.columns
+          || startRow >= endRow || startCol >= endCol){
+        throw new Exception();
+      }
+      Matrix output = Matrix.create(endRow - startRow, endCol - startCol);
+      for(int r = 0; r < output.rows;r++){
+        for(int c = 0; c < output.columns;c++){
+          output.set(r,c,this.get(r+startRow,c+startCol));
+        }
+      }
+      return output;
+    }
     public double[] getCells() {
         return this.cells.clone();
     }
@@ -265,6 +278,32 @@ public class Matrix {
 
     public Matrix setClone(String wildcard, String otherWildcard, Matrix b) throws Exception {
         return Matrix.setClone(this, wildcard, otherWildcard, b);
+    }
+
+    //
+
+    public Matrix set(int row, int col, Matrix b) throws Exception {
+        if (row < 0 || row > this.rows - b.rows || col < 0 || col > this.columns - b.columns) {
+            throw new Exception();
+        }
+        for(int r = row; r < row + b.rows; r++){
+          for(int c = col; c < col + b.columns; c++){
+            this.set(r,c, b.get(r - row, c - col));
+          }
+        }
+        return this;
+    }
+
+    public Matrix set(Matrix a, int row, int col, Matrix b) throws Exception {
+        return this.set("*", "*", a).set(row, col, b);
+    }
+
+    public static Matrix setClone(Matrix a, int row, int col, Matrix b) throws Exception {
+        return Matrix.create(a.rows, a.columns).set(a, row, col, b);
+    }
+
+    public Matrix setClone(int row, int col, Matrix b) throws Exception {
+        return Matrix.setClone(this, row, col, b);
     }
 
     //
@@ -1049,5 +1088,49 @@ public class Matrix {
 
     public Matrix meanSquaredErrorClone(Matrix b, int nthDerivative) throws Exception {
         return Matrix.meanSquaredErrorClone(this, b, nthDerivative);
+    }
+
+    public static Matrix pack(Matrix[][] blocks) throws Exception{
+        if(blocks == null){
+            throw new Exception();
+        }
+        int rows = 0;
+        int cols = 0;
+        int tempCols = 0;
+        int tempRows = 0;
+        for(int i = 0; i < blocks.length; i++){
+            rows += blocks[i][0].getRows();
+        }
+        for(int i = 0; i < blocks[0].length;i++){
+            cols += blocks[0][i].getColumns();
+        }
+        for(int r = 0; r < blocks.length;r++){
+            tempRows = blocks[r][0].getRows();
+            for(int c = 1; c < blocks[r].length;c++){
+                if(blocks[r][c].getRows() != tempRows){
+                    throw new Exception();
+                }
+            }
+        }
+        for(int c = 0; c < blocks[0].length;c++){
+            tempCols = blocks[0][c].getColumns();
+            for(int r = 1; r < blocks.length;r++){
+                if(blocks[r][c].getColumns() != tempCols){
+                    throw new Exception();
+                }
+            }
+        }
+        Matrix output = new Matrix(rows,cols);
+        int rowIndex = 0;
+        int colIndex = 0;
+        for(int r = 0; r < blocks.length;r++){
+            colIndex = 0;
+            for(int c = 0; c < blocks[r].length;c++){
+                output.set(rowIndex,colIndex, blocks[r][c]);
+                colIndex+=blocks[r][c].getColumns();
+            }
+            rowIndex+=blocks[r][0].getRows();
+        }
+        return output;
     }
 }
